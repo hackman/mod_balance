@@ -23,6 +23,7 @@ static void *balance_create_server_config(pool *p, server_rec *s) {
 	cfg->global_conns		= GLOBAL_CONNS;
 	cfg->vhost_conns		= VHOST_CONNS;
 	cfg->user_conns			= USER_CONNS;
+	cfg->ip_conns			= IP_CONNS;
 	cfg->load				= MIN_LOAD;
 	return cfg;
 }
@@ -33,6 +34,9 @@ static void *balance_merge_server_config(pool *p, void *overridep, void *basep) 
 
 	if (!override->load || override->load < 0)
 		override->load = base->load;
+
+	if (!override->ip_conns || override->ip_conns < 0)
+		override->ip_conns = base->ip_conns;
 
 	if (!override->user_conns || override->user_conns < 0)
 		override->user_conns = base->user_conns;
@@ -58,6 +62,7 @@ static int balance_handler(request_rec *r) {
 	int i;
 	int throttle = 0;
 	int ip_count = 0;
+	int vhost_count = 0;
 	int user_count = 0;
 	int global_count = 0;
 
@@ -68,13 +73,14 @@ static int balance_handler(request_rec *r) {
 #endif
 		return DECLINED;
 	}
-
+#ifdef BALANCE_DEBUG
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
 			"[mod_balance] Request UID: %d Request Host: %s", r->server->server_uid, r->server->server_hostname);
+#endif
 
 	if (cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] > cfg->load ) { 
 		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-			"[mod_balance] Serving file %s throttled because of load %.2f", r->filename, loadavg[0]);
+			"[mod_balance] connection to %s%s throttled because of load %.2f", r->server->server_hostname, r->uri, loadavg[0]);
 		throttle = 1;
 	}
 
@@ -84,36 +90,53 @@ static int balance_handler(request_rec *r) {
 			if (ap_scoreboard_image->servers[i].status != SERVER_DEAD && 
 				ap_scoreboard_image->servers[i].status != SERVER_STARTING && 
 				ap_scoreboard_image->servers[i].status != SERVER_READY) {
-				// check IP
-				if ((strcmp(r->connection->remote_ip, ap_scoreboard_image->servers[i].client) == 0)
-	#ifdef RECORD_FORWARD
-					|| (strcmp(ap_table_get(r->headers_in, "X-Forwarded-For"), ap_scoreboard_image->servers[i].fwdclient) == 0)
-	#endif
-					) {
+				// check the VHost limit
+				if ( strcmp(r->server->server_hostname, ap_scoreboard_image->servers[i].vhostrec->server_hostname) == 0) {
+					vhost_count++;
+					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
+						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this VHost",
+							r->server->server_hostname, r->uri, vhost_count);
+						throttle = 1;
+						break;
+					}
+				}
+				// check the IP limit
+				if (strcmp(r->connection->remote_ip, ap_scoreboard_image->servers[i].client) == 0) {
 						ip_count++;
-						if ( cfg->vhost_conns > 0 && ip_count >= cfg->vhost_conns ) {
+						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
+							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+								"[mod_balance] connection to %s%s throttled because of too many connections(%d) from this IP",
+								r->server->server_hostname, r->uri, ip_count);
 							throttle = 1;
 							break;
 						}
 				}
-				ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-					"[mod_balance] Scoreboard UID: %d Host: %s", 
-						ap_scoreboard_image->servers[i].vhostrec->server_uid,
-						ap_scoreboard_image->servers[i].vhostrec->server_hostname);
-					
-				// check User
+				// check the User limit
 				if (r->server->server_uid == ap_scoreboard_image->servers[i].vhostrec->server_uid) {
 					user_count++;
 					if ( cfg->user_conns > 0 && user_count >= cfg->user_conns ) {
+						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to vhosts of UID %d",
+							r->server->server_hostname, r->uri, user_count);
 						throttle = 1;
 						break;
 					}
 				}
 				global_count++;
 				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
+					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+						"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this whole server",
+						r->server->server_hostname, r->uri, global_count);
 					throttle = 1;
 					break;
 				}
+#ifdef BALANCE_DEBUG
+				ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+					"[mod_balance] Scoreboard UID: %d Host: %s",
+						ap_scoreboard_image->servers[i].vhostrec->server_uid,
+						ap_scoreboard_image->servers[i].vhostrec->server_hostname);
+#endif
 			}
 		}
 	}
@@ -140,10 +163,9 @@ static int balance_handler(request_rec *r) {
 #endif
 			usleep(cfg->static_throttle * 1000000);
 		}
-		return DECLINED;
 	}
-
-	return OK;
+	// continue with other modules
+	return DECLINED;
 };
 
 int is_digit(const char *val) {
@@ -168,6 +190,15 @@ static const char *min_load_handler(cmd_parms *cmd, void *mconfig, const char *a
 		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
 		cfg->load = atof(arg);
 	}
+	return NULL;
+}
+
+static const char *max_ip_conns_handler(cmd_parms *cmd, void *mconfig, const char *arg) {
+	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
+	int val = 0;
+	val = is_digit(arg);
+	if (val != 0)
+		cfg->ip_conns = val;
 	return NULL;
 }
 
@@ -224,6 +255,8 @@ static const command_rec balance_cmds[] = {
 		"maximum number of connections allowed for the defined user id, to the whole server. Set it to 0 to disable." },
 	{ "MaxVhostConnections", max_vhost_conns_handler, NULL, RSRC_CONF, TAKE1,
 		"maximum number of connections allowed from a single ip to a single vhost. Set it to 0 to disable." },
+	{ "MaxConnsPerIP", max_ip_conns_handler, NULL, RSRC_CONF, TAKE1,
+		"maximum number of connections allowed from a single ip. Set it to 0 to disable." },
 	{ "MinThrottleLoad", min_load_handler, NULL, RSRC_CONF, TAKE1,
 		"minimum server load on which we trigger throttling. Set it to 0 to disable." },
 	{ "StaticContentThrottle", static_throttle_handler, NULL, RSRC_CONF, TAKE1,
