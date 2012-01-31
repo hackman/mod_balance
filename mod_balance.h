@@ -13,11 +13,11 @@
 #include <stdlib.h>		// required by atoi(), atof(), getloadavg()
 #include <unistd.h>		// usleep
 
-#define BALANCE_DEBUG
-#define BALANCE_VERSION "mod_balance/0.01"
-#define MAX_USER_SIZE 12
+//#define BALANCE_DEBUG
+#define BALANCE_VERSION "mod_balance/0.02"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
+#define IP_CONNS -1
 #define USER_CONNS -1
 #define VHOST_CONNS -1
 #define GLOBAL_CONNS -1
@@ -28,6 +28,7 @@ typedef struct {
     int global_conns;
     int vhost_conns;
 	int user_conns;
+	int ip_conns;
     double load;
 	int static_throttle;
 	int dynamic_throttle;
