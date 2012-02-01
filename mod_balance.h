@@ -12,7 +12,7 @@
 #include <stdlib.h>		// required by atoi(), atof(), getloadavg()
 #include <unistd.h>		// usleep
 
-#define BALANCE_DEBUG
+//#define BALANCE_DEBUG
 
 #ifdef BALANCE_DEBUG
 #include <stdio.h>
