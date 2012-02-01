@@ -9,19 +9,23 @@
 #include "http_conf_globals.h"
 #include "scoreboard.h"
 
-#include <stdio.h>		// printf()
 #include <stdlib.h>		// required by atoi(), atof(), getloadavg()
 #include <unistd.h>		// usleep
 
-//#define BALANCE_DEBUG
-#define BALANCE_VERSION "mod_balance/0.02"
+#define BALANCE_DEBUG
+
+#ifdef BALANCE_DEBUG
+#include <stdio.h>
+#endif
+
+#define BALANCE_VERSION "mod_balance/0.03"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
-#define IP_CONNS -1
-#define USER_CONNS -1
-#define VHOST_CONNS -1
-#define GLOBAL_CONNS -1
-#define MIN_LOAD 5.00
+#define IP_CONNS 0
+#define USER_CONNS 0
+#define VHOST_CONNS 0
+#define GLOBAL_CONNS 0
+#define MIN_LOAD 0.00
 
 // Module config structures
 typedef struct {
