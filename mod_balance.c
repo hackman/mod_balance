@@ -47,7 +47,6 @@ static void *balance_merge_server_config(pool *p, void *basep, void *overridep) 
 	if ( override->static_throttle < 0 )
 		override->static_throttle = base->static_throttle;
 #ifdef BALANCE_DEBUG
-/*
 	printf("over->load: %.2f base->load: %.2f\nover->ip_conns: %d base->ip_conns: %d\nover->user_conns: %d base->user_conns: %d\n"
 		"over->vhost_conns: %d base->vhost_conns: %d\nover->global_conns: %d base->global_conns: %d\n",
         override->load, base->load,
@@ -56,7 +55,6 @@ static void *balance_merge_server_config(pool *p, void *basep, void *overridep) 
         override->vhost_conns, base->vhost_conns,
         override->global_conns, base->global_conns
     );
-*/
 #endif
 	return override;
 }
@@ -70,7 +68,7 @@ static int balance_handler(request_rec *r) {
 	int vhost_count = 0;
 	int user_count = 0;
 	int global_count = 0;
-
+	server_rec *vhost = NULL;
 	/* Only handle initial requests */
 	if(!ap_is_initial_req(r)) {
 #ifdef BALANCE_DEBUG
@@ -91,10 +89,6 @@ static int balance_handler(request_rec *r) {
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] global_conns: %d vhost_conns: %d user_conns: %d min_load: %.2f",
 		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
 #endif
-	if (!cfg->load) {
-		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] missing configuration for load");
-		return DECLINED;
-	}
 
 	// check the load
 	if (cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] > cfg->load ) { 
@@ -108,18 +102,8 @@ static int balance_handler(request_rec *r) {
 		for (i = 0; i < HARD_SERVER_LIMIT; ++i) {
 			if (ap_scoreboard_image->servers[i].status != SERVER_DEAD && 
 				ap_scoreboard_image->servers[i].status != SERVER_STARTING && 
+//				ap_scoreboard_image->servers[i].status != SERVER_GRACEFUL && 
 				ap_scoreboard_image->servers[i].status != SERVER_READY) {
-				// check the VHost limit
-				if ( strcmp(r->server->server_hostname, ap_scoreboard_image->servers[i].vhostrec->server_hostname) == 0) {
-					vhost_count++;
-					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
-						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this VHost",
-							r->hostname, r->uri, vhost_count);
-						throttle = 1;
-						break;
-					}
-				}
 				// check the IP limit
 				if (strcmp(r->connection->remote_ip, ap_scoreboard_image->servers[i].client) == 0) {
 						ip_count++;
@@ -131,8 +115,43 @@ static int balance_handler(request_rec *r) {
 							break;
 						}
 				}
+
+				global_count++;
+				// check the Global connections limit
+				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
+					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+						"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this whole server",
+						r->hostname, r->uri, global_count);
+					throttle = 1;
+					break;
+				}
+
+				// Fix for a race condition which happens during child start/restart, 
+				// when the vhost information is not available in the scoreboard
+				// I don't understand why I need the separate vhost pointer....
+				vhost = ap_scoreboard_image->servers[i].vhostrec;
+				if (ap_scoreboard_image->parent[i].generation != ap_my_generation) {
+					vhost = NULL;
+				}
+
+				if (vhost == NULL)
+					break;
+
+
+				// check the VHost limit
+				if ( strcmp(r->server->server_hostname, vhost->server_hostname) == 0) {
+					vhost_count++;
+					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
+						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
+							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this VHost",
+							r->hostname, r->uri, vhost_count);
+						throttle = 1;
+						break;
+					}
+				}
+
 				// check the User limit
-				if (r->server->server_uid == ap_scoreboard_image->servers[i].vhostrec->server_uid) {
+				if (r->server->server_uid == vhost->server_uid) {
 					user_count++;
 					if ( cfg->user_conns > 0 && user_count >= cfg->user_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
@@ -142,17 +161,10 @@ static int balance_handler(request_rec *r) {
 						break;
 					}
 				}
-				global_count++;
-				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
-					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-						"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this whole server",
-						r->hostname, r->uri, global_count);
-					throttle = 1;
-					break;
-				}
-			}
-		}
-	}
+
+			} // invalid child status (for this module)
+		} // end of the child loop
+	} // we already know that we have to throttle the connection
 	
 	if ( throttle ) {
 		if (r->handler && strncmp(r->handler, "application/", 12) == 0) {
