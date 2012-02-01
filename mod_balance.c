@@ -2,12 +2,6 @@
 
 module MODULE_VAR_EXPORT balance_module;
 
-static unsigned int my_hash(int val) {
-	unsigned int hash = 166573;
-	hash =+ val;
-	return hash;
-}
-
 static void balance_init(server_rec *s, pool *p) {
 #ifdef BALANCE_DEBUG
   ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s, "[mod_balance] Initializing...");
@@ -28,31 +22,42 @@ static void *balance_create_server_config(pool *p, server_rec *s) {
 	return cfg;
 }
 
-static void *balance_merge_server_config(pool *p, void *overridep, void *basep) {
+static void *balance_merge_server_config(pool *p, void *basep, void *overridep) {
 	balance_config *base		= (balance_config *)basep;
 	balance_config *override	= (balance_config *)overridep;
 
-	if (!override->load || override->load < 0)
+	if ( override->load < 0 )
 		override->load = base->load;
 
-	if (!override->ip_conns || override->ip_conns < 0)
+	if ( override->ip_conns < 0 )
 		override->ip_conns = base->ip_conns;
 
-	if (!override->user_conns || override->user_conns < 0)
+	if ( override->user_conns < 0 )
 		override->user_conns = base->user_conns;
 
-	if (!override->vhost_conns || override->vhost_conns < 0)
+	if ( override->vhost_conns < 0 )
 		override->vhost_conns = base->vhost_conns;
 
-	if (!override->global_conns || override->global_conns < 0)
+	if ( override->global_conns < 0 )
 		override->global_conns = base->global_conns;
 
-	if (!override->dynamic_throttle || override->dynamic_throttle < 0)	
+	if ( override->dynamic_throttle < 0 )
 		override->dynamic_throttle = base->dynamic_throttle;
 
-	if (!override->static_throttle || override->static_throttle < 0)
+	if ( override->static_throttle < 0 )
 		override->static_throttle = base->static_throttle;
-
+#ifdef BALANCE_DEBUG
+/*
+	printf("over->load: %.2f base->load: %.2f\nover->ip_conns: %d base->ip_conns: %d\nover->user_conns: %d base->user_conns: %d\n"
+		"over->vhost_conns: %d base->vhost_conns: %d\nover->global_conns: %d base->global_conns: %d\n",
+        override->load, base->load,
+        override->ip_conns, base->ip_conns,
+        override->user_conns, base->user_conns,
+        override->vhost_conns, base->vhost_conns,
+        override->global_conns, base->global_conns
+    );
+*/
+#endif
 	return override;
 }
 
@@ -73,14 +78,28 @@ static int balance_handler(request_rec *r) {
 #endif
 		return DECLINED;
 	}
-#ifdef BALANCE_DEBUG
-	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-			"[mod_balance] Request UID: %d Request Host: %s", r->server->server_uid, r->server->server_hostname);
-#endif
 
+#ifdef BALANCE_DEBUG
+	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] content type: %s handler: %s",
+		r->content_type, r->handler);
+	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] Request UID: %d Request Host: %s Hostname: %s",
+		r->server->server_uid, r->server->server_hostname, r->hostname);
+	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] apache uid: %d uid: %d",
+		ap_user_id, r->server->server_uid);
+	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] ip_count: %d user_count: %d global_count %d",
+		ip_count, user_count, global_count);
+	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] global_conns: %d vhost_conns: %d user_conns: %d min_load: %.2f",
+		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
+#endif
+	if (!cfg->load) {
+		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] missing configuration for load");
+		return DECLINED;
+	}
+
+	// check the load
 	if (cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] > cfg->load ) { 
-		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-			"[mod_balance] connection to %s%s throttled because of load %.2f", r->server->server_hostname, r->uri, loadavg[0]);
+		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] connection to %s%s throttled because of load %.2f",
+			r->hostname, r->uri, loadavg[0]);
 		throttle = 1;
 	}
 
@@ -96,7 +115,7 @@ static int balance_handler(request_rec *r) {
 					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
 							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this VHost",
-							r->server->server_hostname, r->uri, vhost_count);
+							r->hostname, r->uri, vhost_count);
 						throttle = 1;
 						break;
 					}
@@ -107,7 +126,7 @@ static int balance_handler(request_rec *r) {
 						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
 								"[mod_balance] connection to %s%s throttled because of too many connections(%d) from this IP",
-								r->server->server_hostname, r->uri, ip_count);
+								r->hostname, r->uri, ip_count);
 							throttle = 1;
 							break;
 						}
@@ -118,7 +137,7 @@ static int balance_handler(request_rec *r) {
 					if ( cfg->user_conns > 0 && user_count >= cfg->user_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
 							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to vhosts of UID %d",
-							r->server->server_hostname, r->uri, user_count);
+							r->hostname, r->uri, user_count, r->server->server_uid);
 						throttle = 1;
 						break;
 					}
@@ -127,32 +146,16 @@ static int balance_handler(request_rec *r) {
 				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
 					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
 						"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this whole server",
-						r->server->server_hostname, r->uri, global_count);
+						r->hostname, r->uri, global_count);
 					throttle = 1;
 					break;
 				}
-#ifdef BALANCE_DEBUG
-				ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-					"[mod_balance] Scoreboard UID: %d Host: %s",
-						ap_scoreboard_image->servers[i].vhostrec->server_uid,
-						ap_scoreboard_image->servers[i].vhostrec->server_hostname);
-#endif
 			}
 		}
 	}
-#ifdef BALANCE_DEBUG
-	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] ip_count: %d user_count: %d global_count %d", ip_count, user_count, global_count);
-	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] apache uid: %d uid: %d", 
-		ap_user_id, r->server->server_uid);
-	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] global_conns: %d vhost_conns: %d user_conns: %d min_load: %.2f", 
-		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
-#endif
 	
 	if ( throttle ) {
-#ifdef BALANCE_DEBUG
-		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] content type: %s", r->content_type);
-#endif
-		if (r->content_type && strncmp(r->content_type, "application/", 12) == 0) {
+		if (r->handler && strncmp(r->handler, "application/", 12) == 0) {
 #ifdef BALANCE_DEBUG
 			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] Throttling the connection for %d seconds", cfg->dynamic_throttle);
 #endif
@@ -184,7 +187,7 @@ static const char *min_load_handler(cmd_parms *cmd, void *mconfig, const char *a
 	if (arg) {
 		for(i = 0; i < strlen(arg); i++) {
 			if (!isdigit(arg[i]) && arg[i] != '.') {
-				return NULL;
+				return "Invalid value for MinThrottleLoad";
 			}
 		}
 		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
@@ -197,7 +200,7 @@ static const char *max_ip_conns_handler(cmd_parms *cmd, void *mconfig, const cha
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->ip_conns = val;
 	return NULL;
 }
@@ -206,7 +209,7 @@ static const char *max_user_conns_handler(cmd_parms *cmd, void *mconfig, const c
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->user_conns = val;
 	return NULL;
 }
@@ -215,7 +218,7 @@ static const char *max_vhost_conns_handler(cmd_parms *cmd, void *mconfig, const 
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->vhost_conns = val;
 	return NULL;
 }
@@ -224,7 +227,7 @@ static const char *max_global_conns_handler(cmd_parms *cmd, void *mconfig, const
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->global_conns = val;
 	return NULL;
 }
@@ -233,7 +236,7 @@ static const char *static_throttle_handler(cmd_parms *cmd, void *mconfig, const 
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->static_throttle = val;
 	return NULL;
 }
@@ -242,7 +245,7 @@ static const char *dynamic_throttle_handler(cmd_parms *cmd, void *mconfig, const
 	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
 	int val = 0;
 	val = is_digit(arg);
-	if (val != 0)
+	if (val >= 0)
 		cfg->dynamic_throttle = val;
 	return NULL;
 }
