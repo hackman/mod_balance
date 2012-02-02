@@ -40,6 +40,18 @@ There is no such problem with Apache 2.x
 </div>
 <br>
 
+<div id="quickview">
+  <h3>Directives</h3>
+  <ul id="topics">
+  <li><img alt="" src="images/down.gif" /> <a href="#minthrottleload">MinThrottleLoad</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#connsperip">MaxConnsPerIP</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#userconns">MaxUserConnections</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#vhostconns">MaxVhostConnections</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#globalconns">MaxGlobalConnections</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#staticthrottle">StaticContentThrottle</a></li>
+  <li><img alt="" src="images/down.gif" /> <a href="#dynamicthrottle">DynamicContentThrottle</a></li>
+  </ul>
+</div>
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="minthrottleload" id="minthrottleload">MinThrottleLoad Directive</a></h2>
@@ -53,8 +65,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>this directive defines the minimum load that the machine should have in order for the throttling to kick in<br />
-
+    <p>this directive defines the minimum load that the machine should have in order for the throttling to kick in.<br />
+	If we the load is bellow the defined the module will not throttle any connections.<br />
     <div class="example"><h3>Examples</h3><p><code>
       MinThrottleLoad 10.0<br />
       <br />
@@ -84,7 +96,7 @@ There is no such problem with Apache 2.x
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif"></a></div>
 
-<div class="directive-section"><h2><a name="connsperip" id="connsperip">MaxUserConnections Directive</a></h2>
+<div class="directive-section"><h2><a name="userconns" id="userconns">MaxUserConnections Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to vhosts running with the same UID.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxUserConnections <var>number</var></code></td></tr>
@@ -105,7 +117,7 @@ There is no such problem with Apache 2.x
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif"></a></div>
 
-<div class="directive-section"><h2><a name="connsperip" id="connsperip">MaxVhostConnections Directive</a></h2>
+<div class="directive-section"><h2><a name="vhostconns" id="vhostconns">MaxVhostConnections Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to the current vhost.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxVhostConnections <var>number</var></code></td></tr>
@@ -126,7 +138,7 @@ There is no such problem with Apache 2.x
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif"></a></div>
 
-<div class="directive-section"><h2><a name="connsperip" id="connsperip">MaxGlobalConnections Directive</a></h2>
+<div class="directive-section"><h2><a name="globalconns" id="globalconns">MaxGlobalConnections Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to the server.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxGlobalConnections <var>number</var></code></td></tr>
@@ -147,7 +159,7 @@ There is no such problem with Apache 2.x
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif"></a></div>
 
-<div class="directive-section"><h2><a name="connsperip" id="connsperip">StaticContentThrottle Directive</a></h2>
+<div class="directive-section"><h2><a name="staticthrottle" id="staticthrottle">StaticContentThrottle Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the delay<i>(in seconds)</i> value for static content</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>StaticContentThrottle <var>number</var></code></td></tr>
@@ -169,7 +181,7 @@ There is no such problem with Apache 2.x
 
 <div class="top"><a href="#page-header"><img alt="top" src="/images/up.gif"></a></div>
 
-<div class="directive-section"><h2><a name="connsperip" id="connsperip">DynamicContentThrottle Directive</a></h2>
+<div class="directive-section"><h2><a name="dynamicthrottle" id="dynamicthrottle">DynamicContentThrottle Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the delay<i>(in seconds)</i> for dynamic content</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>DynamicContentThrottle <var>number</var></code></td></tr>
