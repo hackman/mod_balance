@@ -91,10 +91,14 @@ static int balance_handler(request_rec *r) {
 #endif
 
 	// check the load
-	if (cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] > cfg->load ) { 
-		ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] connection to %s%s throttled because of load %.2f",
-			r->hostname, r->uri, loadavg[0]);
-		throttle = 1;
+	if ( cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 ) {
+		if ( loadavg[0] > cfg->load ) {
+			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] connection to %s%s throttled because of load %.2f",
+				r->hostname, r->uri, loadavg[0]);
+			throttle = 1;
+		} else {
+			return DECLINED;
+		}
 	}
 
 	// the load is OK, we continue searching for a reason to throttle the request
