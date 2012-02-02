@@ -18,7 +18,7 @@
 #include <stdio.h>
 #endif
 
-#define BALANCE_VERSION "mod_balance/0.04"
+#define BALANCE_VERSION "mod_balance/0.05"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
 #define IP_CONNS 0
