@@ -91,29 +91,21 @@ static int balance_handler(request_rec *r) {
 #endif
 
 	// check the load
-	if ( cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 ) {
-		if ( loadavg[0] > cfg->load ) {
-			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] connection to %s%s throttled because of load %.2f",
-				r->hostname, r->uri, loadavg[0]);
-			throttle = 1;
-		} else {
-			return DECLINED;
-		}
+	if ( cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] < cfg->load ) {
+		return DECLINED;
 	}
 
 	// the load is OK, we continue searching for a reason to throttle the request
-	if (!throttle) {
 		for (i = 0; i < HARD_SERVER_LIMIT; ++i) {
 			if (ap_scoreboard_image->servers[i].status != SERVER_DEAD && 
 				ap_scoreboard_image->servers[i].status != SERVER_STARTING && 
-//				ap_scoreboard_image->servers[i].status != SERVER_GRACEFUL && 
 				ap_scoreboard_image->servers[i].status != SERVER_READY) {
 				// check the IP limit
 				if (strcmp(r->connection->remote_ip, ap_scoreboard_image->servers[i].client) == 0) {
 						ip_count++;
 						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-								"[mod_balance] connection to %s%s throttled because of too many connections(%d) from this IP",
+								"[mod_balance] req. to %s%s reached MaxConnsPerIP (%d)",
 								r->hostname, r->uri, ip_count);
 							throttle = 1;
 							break;
@@ -124,7 +116,7 @@ static int balance_handler(request_rec *r) {
 				// check the Global connections limit
 				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
 					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-						"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this whole server",
+						"[mod_balance] req. to %s%s reached MaxGlobalConnections(%d)",
 						r->hostname, r->uri, global_count);
 					throttle = 1;
 					break;
@@ -147,7 +139,7 @@ static int balance_handler(request_rec *r) {
 					vhost_count++;
 					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to this VHost",
+							"[mod_balance] req. to %s%s reached MaxVhostConnections(%d)",
 							r->hostname, r->uri, vhost_count);
 						throttle = 1;
 						break;
@@ -159,7 +151,7 @@ static int balance_handler(request_rec *r) {
 					user_count++;
 					if ( cfg->user_conns > 0 && user_count >= cfg->user_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-							"[mod_balance] connection to %s%s throttled because of too many connections(%d) to vhosts of UID %d",
+							"[mod_balance] req. to %s%s reached MaxUserConnections(%d) of UID %d",
 							r->hostname, r->uri, user_count, r->server->server_uid);
 						throttle = 1;
 						break;
@@ -168,7 +160,6 @@ static int balance_handler(request_rec *r) {
 
 			} // invalid child status (for this module)
 		} // end of the child loop
-	} // we already know that we have to throttle the connection
 	
 	if ( throttle ) {
 		if (r->handler && strncmp(r->handler, "application/", 12) == 0) {
