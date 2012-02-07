@@ -107,6 +107,7 @@ static int balance_handler(request_rec *r) {
 	}
 
 	// the load is OK, we continue searching for a reason to throttle the request
+	if (!throttle) {
 		for (i = 0; i < HARD_SERVER_LIMIT; ++i) {
 			if (ap_scoreboard_image->servers[i].status != SERVER_DEAD && 
 				ap_scoreboard_image->servers[i].status != SERVER_STARTING && 
@@ -171,7 +172,8 @@ static int balance_handler(request_rec *r) {
 
 			} // invalid child status (for this module)
 		} // end of the child loop
-	
+	} // we already know that we have to throttle the connection
+
 	if ( throttle ) {
 		if (r->handler && strncmp(r->handler, "application/", 12) == 0) {
 #ifdef BALANCE_DEBUG
