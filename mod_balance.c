@@ -18,7 +18,8 @@ static void *balance_create_server_config(pool *p, server_rec *s) {
 	cfg->vhost_conns		= VHOST_CONNS;
 	cfg->user_conns			= USER_CONNS;
 	cfg->ip_conns			= IP_CONNS;
-	cfg->load				= MIN_LOAD;
+	cfg->min_load			= MIN_LOAD;
+	cfg->max_load			= MAX_LOAD;
 	return cfg;
 }
 
@@ -26,8 +27,11 @@ static void *balance_merge_server_config(pool *p, void *basep, void *overridep) 
 	balance_config *base		= (balance_config *)basep;
 	balance_config *override	= (balance_config *)overridep;
 
-	if ( override->load < 0 )
-		override->load = base->load;
+	if ( override->min_load < 0 )
+		override->min_load = base->min_load;
+
+	if ( override->max_load < 0 )
+		override->max_load = base->max_load;
 
 	if ( override->ip_conns < 0 )
 		override->ip_conns = base->ip_conns;
@@ -90,9 +94,16 @@ static int balance_handler(request_rec *r) {
 		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
 #endif
 
-	// check the load
-	if ( cfg->load > 0.0 && getloadavg(loadavg, 1) > 0 && loadavg[0] < cfg->load ) {
-		return DECLINED;
+	// check the min load
+	if (getloadavg(loadavg, 1) > 0) {
+		if ( cfg->min_load > 0.0 && loadavg[0] < cfg->min_load ) {
+			return DECLINED;
+		}
+		if ( cfg->max_load > 0.0 && loadavg[0] > cfg->max_load ) {
+			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] req. to %s%s reached MaxThrottleLoad(%.2f) and the load is %.2f",
+				r->hostname, r->uri, cfg->max_load, loadavg[0]);
+			throttle = 1;
+		}
 	}
 
 	// the load is OK, we continue searching for a reason to throttle the request
@@ -197,8 +208,27 @@ static const char *min_load_handler(cmd_parms *cmd, void *mconfig, const char *a
 				return "Invalid value for MinThrottleLoad";
 			}
 		}
+#ifdef BALANCE_DEBUG
 		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
-		cfg->load = atof(arg);
+#endif
+		cfg->min_load = atof(arg);
+	}
+	return NULL;
+}
+
+static const char *max_load_handler(cmd_parms *cmd, void *mconfig, const char *arg) {
+	balance_config *cfg = (balance_config *) ap_get_module_config(cmd->server->module_config, &balance_module);
+	int i;
+	if (arg) {
+		for(i = 0; i < strlen(arg); i++) {
+			if (!isdigit(arg[i]) && arg[i] != '.') {
+				return "Invalid value for MaxThrottleLoad";
+			}
+		}
+#ifdef BALANCE_DEBUG
+		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MaxThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
+#endif
+		cfg->max_load = atof(arg);
 	}
 	return NULL;
 }
@@ -269,6 +299,8 @@ static const command_rec balance_cmds[] = {
 		"maximum number of connections allowed from a single ip. Set it to 0 to disable." },
 	{ "MinThrottleLoad", min_load_handler, NULL, RSRC_CONF, TAKE1,
 		"minimum server load on which we trigger throttling. Set it to 0 to disable." },
+	{ "MaxThrottleLoad", max_load_handler, NULL, RSRC_CONF, TAKE1,
+		"maximum server load after which we trigger throttling. Set it to 0 to disable." },
 	{ "StaticContentThrottle", static_throttle_handler, NULL, RSRC_CONF, TAKE1,
 		"time in seconds for which we will wait when the content is not dynamic. Set it to 0 to disable." },
 	{ "DynamicContentThrottle", dynamic_throttle_handler, NULL, RSRC_CONF, TAKE1,
