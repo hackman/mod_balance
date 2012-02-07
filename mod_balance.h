@@ -18,7 +18,7 @@
 #include <stdio.h>
 #endif
 
-#define BALANCE_VERSION "mod_balance/0.1"
+#define BALANCE_VERSION "mod_balance/0.2"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
 #define IP_CONNS 0
@@ -26,6 +26,7 @@
 #define VHOST_CONNS 0
 #define GLOBAL_CONNS 0
 #define MIN_LOAD 0.00
+#define MAX_LOAD 0.00
 
 // Module config structures
 typedef struct {
@@ -33,7 +34,8 @@ typedef struct {
     int vhost_conns;
 	int user_conns;
 	int ip_conns;
-    double load;
+    double min_load;
+	double max_load;
 	int static_throttle;
 	int dynamic_throttle;
 } balance_config;
