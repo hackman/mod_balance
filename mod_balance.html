@@ -67,7 +67,8 @@ There is no such problem with Apache 2.x
 
 </table>
     <p>this directive defines the minimum load that the machine should have in order for the throttling to kick in.<br />
-	If we the load is bellow the defined the module will not throttle any connections.<br />
+	If the load is bellow the defined value, the module will not throttle any connections.<br />
+	A value of 0.0 will disable this check and thus disable all other checks except the MaxThrottleLoad.<br />
     <div class="example"><h3>Examples</h3><p><code>
       MinThrottleLoad 10.0<br />
       <br />
@@ -89,7 +90,8 @@ There is no such problem with Apache 2.x
 
 </table>
     <p>this directive defines the maximum load that the machine should have before the module starts to throttle all connections.<br />
-	If we the load is bellow the defined the module will throttle only connections that reach any of the other limits .<br />
+	If the load is bellow the defined value the module will throttle only connections that reach any of the other limits .<br />
+	You can use a value of 0.0 to disable this check.<br />
     <div class="example"><h3>Examples</h3><p><code>
       MaxThrottleLoad 10.0<br />
       <br />
@@ -109,7 +111,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>This directive defines the maximum allowed connections from a single IP to the server (on all virtual hosts)
+    <p>This directive defines the maximum allowed connections from a single IP to the server (on all virtual hosts).<br />
+	You can use a value of 0 to disable this check.<br />
 
     <div class="example"><h3>Examples</h3><p><code>
       MaxConnsPerIP 12<br />
@@ -130,7 +133,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>This directive defines the maximum allowed connections to vhosts running with the same UID
+    <p>This directive defines the maximum allowed connections to vhosts running with the same UID<br />
+	You can use a value of 0 to disable this check.<br />
 
     <div class="example"><h3>Examples</h3><p><code>
       MaxUserConnections 12<br />
@@ -151,7 +155,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>This directive defines the maximum allowed connections to the current vhost
+    <p>This directive defines the maximum allowed connections to the current vhost<br />
+	You can use a value of 0 to disable this check.<br />
 
     <div class="example"><h3>Examples</h3><p><code>
       MaxVhostConnections 12<br />
@@ -172,7 +177,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>This directive defines the maximum allowed connections to the server
+    <p>This directive defines the maximum allowed connections to the server<br />
+	You can use a value of 0 to disable this check.<br />
 
     <div class="example"><h3>Examples</h3><p><code>
       MaxGlobalConnections 12<br />
@@ -193,7 +199,8 @@ There is no such problem with Apache 2.x
 <tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Apache 1.3 and later</td></tr>
 
 </table>
-    <p>If this directive is set and its value is greater then zero, then the module will disable the dynamic content throttling(for the static content) and will simply use a static delay value defined by the directive.<br />
+    <p>By default the module throttles the static content dynamically based on the size of the requested file.<br />
+	If this directive is set and its value is greater then zero, then the module will disable the dynamic content throttling(for the static content) and will simply use a static delay value<i>(in seconds)</i> defined by the directive.<br />
 	If the value of the directive is 0, this disables the throttling of static content.<br />
 
     <div class="example"><h3>Examples</h3><p><code>
