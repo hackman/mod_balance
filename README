@@ -8,6 +8,10 @@ The module provides several options that work indepndantly:
 	- this option defines the minimum load that the machine 
 	should have in order for the throttling to kick in
 
+ * MaxThrottleLoad
+	- this option defines the load over which we will always 
+	throttle requests
+
  * MaxConnsPerIP
 	- this options defines the maximum allowed connections 
 	from a single IP to the server (on all virtual hosts).
