@@ -6,11 +6,19 @@
 #include "http_core.h"
 #include "http_main.h"
 #include "http_log.h"
-#include "http_conf_globals.h"
 #include "scoreboard.h"
 
 #include <stdlib.h>		// required by atoi(), atof(), getloadavg()
 #include <unistd.h>		// usleep
+#include <ctype.h>		// isdigit()
+
+#ifdef APACHE_RELEASE
+#include "http_conf_globals.h"
+#else
+#define APACHE2
+#include "ap_mpm.h"
+static int server_limit, thread_limit;
+#endif
 
 //#define BALANCE_DEBUG
 
@@ -18,7 +26,7 @@
 #include <stdio.h>
 #endif
 
-#define BALANCE_VERSION "mod_balance/0.3"
+#define BALANCE_VERSION "mod_balance/0.4"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
 #define IP_CONNS 0
