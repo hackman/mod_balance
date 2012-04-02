@@ -20,6 +20,10 @@
 static int server_limit, thread_limit;
 #endif
 
+#ifdef APLOG_USE_MODULE
+APLOG_USE_MODULE(balance);
+#endif
+
 //#define BALANCE_DEBUG
 
 #ifdef BALANCE_DEBUG
