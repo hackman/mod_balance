@@ -53,7 +53,7 @@ There is no such problem with Apache 2.x
 
 ## For more information and comments
 
- Marian Marinov <mm@yuhu.biz>
- Jabber: hackman@jabber.org
- ICQ: 7556201
- URL: [http://github.com/hackman/mod_balance](http://github.com/hackman/mod_balance)
+* Marian Marinov <mm@yuhu.biz>
+* Jabber: hackman@jabber.org
+* ICQ: 7556201
+* URL: [http://github.com/hackman/mod_balance](http://github.com/hackman/mod_balance)
