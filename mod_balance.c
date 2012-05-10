@@ -203,11 +203,11 @@ static int balance_handler(request_rec *r) {
 						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
 #ifdef APACHE2
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r,
-								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP (%d)",
+								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP(%d)",
 								r->content_type, r->hostname : r->hostname ? r->server->server_hostname, r->uri, ip_count);
 #else
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP (%d)",
+								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP(%d)",
 								r->content_type, r->hostname : r->hostname ? r->server->server_hostname, r->uri, ip_count);
 #endif // APACHE2
 							throttle = 1;
