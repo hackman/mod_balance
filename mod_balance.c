@@ -44,7 +44,9 @@ static void balance_init(server_rec *s, pool *p) {
 	ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s, "%s loaded", BALANCE_VERSION);
 #endif // APACHE2
 #endif // BALANCE_DEBUG
+#ifdef APACHE2
 	return OK;
+#endif
 }
 
 #ifdef APACHE2
@@ -169,11 +171,11 @@ static int balance_handler(request_rec *r) {
 		}
 		if ( cfg->max_load > 0.0 && loadavg[0] > cfg->max_load ) {
 #ifdef APACHE2
-			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r, "[mod_balance] req. to %s%s reached MaxThrottleLoad(%.2f) and the load is %.2f",
-				r->hostname, r->uri, cfg->max_load, loadavg[0]);
+			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r, "[mod_balance] %s req. to %s%s reached MaxThrottleLoad(%.2f) and the load is %.2f",
+				r->content_type, r->hostname, r->uri, cfg->max_load, loadavg[0]);
 #else
-			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] req. to %s%s reached MaxThrottleLoad(%.2f) and the load is %.2f",
-				r->hostname, r->uri, cfg->max_load, loadavg[0]);
+			ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] %s req. to %s%s reached MaxThrottleLoad(%.2f) and the load is %.2f",
+				r->content_type, r->hostname, r->uri, cfg->max_load, loadavg[0]);
 #endif
 			throttle = 1;
 		}
@@ -201,12 +203,12 @@ static int balance_handler(request_rec *r) {
 						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
 #ifdef APACHE2
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r,
-								"[mod_balance] req. to %s%s reached MaxConnsPerIP (%d)",
-								r->hostname, r->uri, ip_count);
+								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP (%d)",
+								r->content_type, r->hostname, r->uri, ip_count);
 #else
 							ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-								"[mod_balance] req. to %s%s reached MaxConnsPerIP (%d)",
-								r->hostname, r->uri, ip_count);
+								"[mod_balance] %s req. to %s%s reached MaxConnsPerIP (%d)",
+								r->content_type, r->hostname, r->uri, ip_count);
 #endif // APACHE2
 							throttle = 1;
 							break;
@@ -218,12 +220,12 @@ static int balance_handler(request_rec *r) {
 				if ( cfg->global_conns > 0 && global_count >= cfg->global_conns ) {
 #ifdef APACHE2
 					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r,
-						"[mod_balance] req. to %s%s reached MaxGlobalConnections(%d)",
-						r->hostname, r->uri, global_count);
+						"[mod_balance] %s req. to %s%s reached MaxGlobalConnections(%d)",
+						r->content_type, r->hostname, r->uri, global_count);
 #else
 					ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-						"[mod_balance] req. to %s%s reached MaxGlobalConnections(%d)",
-						r->hostname, r->uri, global_count);
+						"[mod_balance] %s req. to %s%s reached MaxGlobalConnections(%d)",
+						r->content_type, r->hostname, r->uri, global_count);
 #endif // APACHE2
 					throttle = 1;
 					break;
@@ -253,12 +255,12 @@ static int balance_handler(request_rec *r) {
 					if ( cfg->vhost_conns > 0 && vhost_count >= cfg->vhost_conns ) {
 #ifdef APACHE2
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r,
-							"[mod_balance] req. to %s%s reached MaxVhostConnections(%d)",
-							r->hostname, r->uri, vhost_count);
+							"[mod_balance] %s req. to %s%s reached MaxVhostConnections(%d)",
+							r->content_type, r->hostname, r->uri, vhost_count);
 #else
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-							"[mod_balance] req. to %s%s reached MaxVhostConnections(%d)",
-							r->hostname, r->uri, vhost_count);
+							"[mod_balance] %s req. to %s%s reached MaxVhostConnections(%d)",
+							r->content_type, r->hostname, r->uri, vhost_count);
 #endif
 						throttle = 1;
 						break;
@@ -279,8 +281,8 @@ static int balance_handler(request_rec *r) {
 					user_count++;
 					if ( cfg->user_conns > 0 && user_count >= cfg->user_conns ) {
 						ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r,
-							"[mod_balance] req. to %s%s reached MaxUserConnections(%d) of UID %d",
-							r->hostname, r->uri, user_count, r->server->server_uid);
+							"[mod_balance] %s req. to %s%s reached MaxUserConnections(%d) of UID %d",
+							r->content_type, r->hostname, r->uri, user_count, r->server->server_uid);
 						throttle = 1;
 						break;
 					}
