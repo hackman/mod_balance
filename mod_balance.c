@@ -99,9 +99,9 @@ static void *balance_merge_server_config(pool *p, void *basep, void *overridep) 
 	if ( override->static_throttle < 0 )
 		override->static_throttle = base->static_throttle;
 #ifdef BALANCE_DEBUG
-	printf("over->load: %.2f base->load: %.2f\nover->ip_conns: %d base->ip_conns: %d\nover->user_conns: %d base->user_conns: %d\n"
+	printf("over->max_load: %.2f base->max_load: %.2f\nover->ip_conns: %d base->ip_conns: %d\nover->user_conns: %d base->user_conns: %d\n"
 		"over->vhost_conns: %d base->vhost_conns: %d\nover->global_conns: %d base->global_conns: %d\n",
-        override->load, base->load,
+        override->max_load, base->max_load,
         override->ip_conns, base->ip_conns,
         override->user_conns, base->user_conns,
         override->vhost_conns, base->vhost_conns,
@@ -149,7 +149,7 @@ static int balance_handler(request_rec *r) {
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r, "[mod_balance] ip_count: %d user_count: %d global_count %d",
 		ip_count, user_count, global_count);
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, r, "[mod_balance] global_conns: %d vhost_conns: %d user_conns: %d min_load: %.2f",
-		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
+		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->max_load);
 #else
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] content type: %s handler: %s",
 		r->content_type, r->handler);
@@ -160,7 +160,7 @@ static int balance_handler(request_rec *r) {
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] ip_count: %d user_count: %d global_count %d",
 		ip_count, user_count, global_count);
 	ap_log_rerror(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, r, "[mod_balance] global_conns: %d vhost_conns: %d user_conns: %d min_load: %.2f",
-		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->load);
+		cfg->global_conns, cfg->vhost_conns, cfg->user_conns, cfg->max_load);
 #endif // APACHE2
 #endif // BALANCE_DEBUG
 
@@ -340,9 +340,9 @@ static const char *min_load_handler(cmd_parms *cmd, void *mconfig, const char *a
 		}
 #ifdef BALANCE_DEBUG
 #ifdef APACHE2
-		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
+		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->max_load);
 #else
-		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
+		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MinThrottleLoad %s(%f) %f", arg, atof(arg), cfg->max_load);
 #endif // APACHE2
 #endif // BALANCE_DEBUG
 		cfg->min_load = atof(arg);
@@ -361,9 +361,9 @@ static const char *max_load_handler(cmd_parms *cmd, void *mconfig, const char *a
 		}
 #ifdef BALANCE_DEBUG
 #ifdef APACHE2
-		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, cmd->server, "[mod_balance] parsing MaxThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
+		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, 0, cmd->server, "[mod_balance] parsing MaxThrottleLoad %s(%f) %f", arg, atof(arg), cfg->max_load);
 #else
-		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MaxThrottleLoad %s(%f) %f", arg, atof(arg), cfg->load);
+		ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, cmd->server, "[mod_balance] parsing MaxThrottleLoad %s(%f) %f", arg, atof(arg), cfg->max_load);
 #endif // APACHE2
 #endif // BALANCE_DEBUG
 		cfg->max_load = atof(arg);
