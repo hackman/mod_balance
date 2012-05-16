@@ -30,7 +30,7 @@ APLOG_USE_MODULE(balance);
 #include <stdio.h>
 #endif
 
-#define BALANCE_VERSION "mod_balance/1.1"
+#define BALANCE_VERSION "mod_balance/1.2"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
 #define IP_CONNS 0
