@@ -37,13 +37,11 @@ static void balance_init(server_rec *s, pool *p) {
 	/* Add our banner to the ServerBanner */
 	//ap_add_version_component(BALANCE_VERSION);
 #endif // APACHE2
-#ifdef BALANCE_DEBUG
 #ifdef APACHE2
 	ap_log_error(APLOG_MARK, APLOG_INFO, OK, s, "%s loaded", BALANCE_VERSION);
 #else
 	ap_log_error(APLOG_MARK, APLOG_INFO | APLOG_NOERRNO, s, "%s loaded", BALANCE_VERSION);
 #endif // APACHE2
-#endif // BALANCE_DEBUG
 #ifdef APACHE2
 	return OK;
 #endif
