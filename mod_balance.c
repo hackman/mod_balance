@@ -31,11 +31,11 @@ static int balance_init(apr_pool_t *pconf, apr_pool_t *plog, apr_pool_t *ptemp, 
 	ap_mpm_query(AP_MPMQ_HARD_LIMIT_THREADS, &thread_limit);
 	ap_mpm_query(AP_MPMQ_HARD_LIMIT_DAEMONS, &server_limit);
 	/* Add our banner to the ServerBanner */
-	ap_add_version_component(pconf, BALANCE_VERSION);
+	//ap_add_version_component(pconf, BALANCE_VERSION);
 #else
 static void balance_init(server_rec *s, pool *p) {
 	/* Add our banner to the ServerBanner */
-	ap_add_version_component(BALANCE_VERSION);
+	//ap_add_version_component(BALANCE_VERSION);
 #endif // APACHE2
 #ifdef BALANCE_DEBUG
 #ifdef APACHE2
