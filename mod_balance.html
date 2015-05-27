@@ -59,7 +59,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the minimum load that the machine should have in order for the throttling to kick in.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MinThrottleLoad <var>number(float)</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -82,7 +82,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum load that the machine should have before the module starts to throttle all connections.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MinThrottleLoad <var>number(float)</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -104,7 +104,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections from a single IP to the server (on all virtual hosts).</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxConnsPerIP <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -126,7 +126,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to vhosts running with the same UID.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxUserConnections <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -151,7 +151,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to the current vhost.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxVhostConnections <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -173,7 +173,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the maximum allowed connections to the server.</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MaxGlobalConnections <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -195,7 +195,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the delay<i>(in seconds)</i> value for static content</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>StaticContentThrottle <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
@@ -218,7 +218,7 @@ There is no such problem with Apache 2.x
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td> defines the delay<i>(in seconds)</i> for dynamic content</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>DynamicContentThrottle <var>number</var></code></td></tr>
-<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Base</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_balance</td></tr>
