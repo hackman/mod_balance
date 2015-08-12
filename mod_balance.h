@@ -7,6 +7,7 @@
 #include "http_main.h"
 #include "http_log.h"
 #include "scoreboard.h"
+#include "ap_release.h"
 
 #include <stdlib.h>		// required by atoi(), atof(), getloadavg()
 #include <unistd.h>		// usleep
@@ -30,7 +31,11 @@ APLOG_USE_MODULE(balance);
 #include <stdio.h>
 #endif
 
-#define BALANCE_VERSION "mod_balance/1.2"
+#if (AP_SERVER_MAJORVERSION_NUMBER == 2 && AP_SERVER_MINORVERSION_NUMBER == 4)
+#define APACHE24
+#endif
+
+#define BALANCE_VERSION "mod_balance/1.3"
 #define DYNAMIC_SLEEP 5
 #define STATIC_SLEEP 2
 #define IP_CONNS 0
