@@ -124,6 +124,7 @@ static int balance_handler(request_rec *r) {
 	int user_count = 0;
 	server_rec *vhost = NULL;
 #endif
+	char *remote_ip = NULL;
 	/* Only handle initial requests */
 	if(!ap_is_initial_req(r)) {
 #ifdef BALANCE_DEBUG
@@ -179,23 +180,32 @@ static int balance_handler(request_rec *r) {
 		}
 	}
 
+#ifdef APACHE24
+	remote_ip = r->connection->client_ip;
+#else
+	remote_ip = r->connection->remote_ip;
+#endif	// APACHE24
 	// the load is OK, we continue searching for a reason to throttle the request
 	if (!throttle) {
 #ifdef APACHE2
 		for (i = 0; i < server_limit; ++i) {
 			for (j = 0; j < thread_limit; ++j) {
+#ifdef APACHE24
+				ws_record = ap_get_scoreboard_worker_from_indexes(i, j);
+#else
 				ws_record = ap_get_scoreboard_worker(i, j);
+#endif	// APACHE24
 				if (ws_record->status != SERVER_DEAD &&
 					ws_record->status != SERVER_STARTING &&
 					ws_record->status != SERVER_READY) {
-					if (strcmp(r->connection->remote_ip, ws_record->client) == 0) {
+					if (strcmp(remote_ip, ws_record->client) == 0) {
 #else
 			for (i = 0; i < HARD_SERVER_LIMIT; ++i) {
 				if (ap_scoreboard_image->servers[i].status != SERVER_DEAD &&
 					ap_scoreboard_image->servers[i].status != SERVER_STARTING &&
 					ap_scoreboard_image->servers[i].status != SERVER_READY) {
 					// check the IP limit
-					if (strcmp(r->connection->remote_ip, ap_scoreboard_image->servers[i].client) == 0) {
+					if (strcmp(remote_ip, ap_scoreboard_image->servers[i].client) == 0) {
 #endif // APACHE2
 						ip_count++;
 						if ( cfg->ip_conns > 0 && ip_count >= cfg->ip_conns ) {
